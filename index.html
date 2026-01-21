@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>❄️백연 관리 시스템❄️</title>
+    <title>❄️백연 RED 관리 시스템❄️</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
@@ -26,7 +26,7 @@
 <body>
 
 <div class="container">
-    <h1>❄️백연❄️</h1>
+    <h1>❄️백연 RED❄️</h1>
 
     <div class="section">
         <div class="section-title">기본 품목</div>
@@ -67,16 +67,15 @@
 </div>
 
 <script>
+    // 이 부분이 baekyeonred 전용 열쇠입니다.
     const firebaseConfig = {
-       const firebaseConfig = {
-    apiKey: "AIzaSyB8j4S7s63O_sunf2lugiNH9cjHCQYYTCo",
-    authDomain: "backyeonred.firebaseapp.com",
-    databaseURL: "https://backyeonred-default-rtdb.firebaseio.com", // 이 줄이 꼭 있어야 합니다!
-    projectId: "backyeonred",
-    storageBucket: "backyeonred.firebasestorage.app",
-    messagingSenderId: "584492581087",
-    appId: "1:584492581087:web:d887f5851826a4ab1be96a",
-    measurementId: "G-3YF21JYYXS"
+        apiKey: "AIzaSyB8j4S7s63O_sunf2lugiNH9cjHCQYYTCo",
+        authDomain: "backyeonred.firebaseapp.com",
+        databaseURL: "https://backyeonred-default-rtdb.firebaseio.com", // 주소가 반드시 있어야 함!
+        projectId: "backyeonred",
+        storageBucket: "backyeonred.firebasestorage.app",
+        messagingSenderId: "584492581087",
+        appId: "1:584492581087:web:d887f5851826a4ab1be96a"
     };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
@@ -115,7 +114,7 @@
         const buyer = document.getElementById('log_buyer').value;
         const link = document.getElementById('log_link').value;
         const amount = document.getElementById('total_r').innerText;
-        const bank_deposit = document.getElementById('total_b').innerText; // 추가된 부분
+        const bank_deposit = document.getElementById('total_b').innerText;
 
         if(!seller || !buyer || !link || amount === "0원") {
             alert("모든 정보를 입력하고 금액을 확인해주세요!"); return;
@@ -126,7 +125,7 @@
             seller: seller,
             buyer: buyer,
             amount: amount,
-            bank_deposit: bank_deposit, // 파이어베이스에 공계 입금액 추가 저장
+            bank_deposit: bank_deposit,
             link: link
         }).then(() => {
             alert("장부 기록 성공! ❄️");
@@ -158,5 +157,4 @@
     });
 </script>
 </body>
-
 </html>

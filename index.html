@@ -20,7 +20,7 @@
         .btn-submit { width: 100%; padding: 15px; background: #00d4ff; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
         .result-container { background: #fff; color: #000; padding: 20px; border-radius: 10px; margin-top: 20px; }
         .total-val { font-size: 20px; font-weight: 900; color: #d63031; }
-        .sub-val { font-size: 14px; font-weight: bold; color: #2d3436; }
+        .sub-val { font-size: 14px; font-weight: bold; color: #555; }
         #admin_logs { margin-top: 20px; background: #000; padding: 15px; border-radius: 10px; border: 1px solid #333; font-size: 13px; max-height: 400px; overflow-y: auto; }
     </style>
 </head>
@@ -55,8 +55,8 @@
         <div class="row"><label>비콘 환전가 (검은돈 90%)</label><span id="beacon_p" class="sub-val">0원</span></div>
         <div class="row"><label>조직 수수료 (총 30% 수익)</label><span id="org_fee" style="font-weight:bold; color:#e17055;">0원</span></div>
         <hr style="border: 0.5px solid #eee; margin: 10px 0;">
-        <div class="row"><label>실제 지급액 (환전가 - 수수료)</label><span id="final_pay" class="total-val" style="color:#000;">0원</span></div>
-        <div class="row" style="margin-top:5px;"><label>공동계좌 입금액 (수수료의 30%)</label><span id="total_b" style="font-weight:bold; color:#0984e3; font-size: 18px;">0원</span></div>
+        <div class="row"><label>실제 지급액 (환전가-수수료)</label><span id="final_pay" class="total-val" style="color:#000;">0원</span></div>
+        <div class="row" style="margin-top:5px;"><label>공동계좌 입금액 (수익의 30%)</label><span id="total_b" style="font-weight:bold; color:#0984e3; font-size: 18px;">0원</span></div>
     </div>
 
     <div class="section" style="margin-top:20px;">
@@ -72,6 +72,7 @@
 </div>
 
 <script>
+    // Firebase 설정
     const firebaseConfig = {
         apiKey: "AIzaSyB8j4S7s63O_sunf2lugiNH9cjHCQYYTCo",
         authDomain: "backyeonred.firebaseapp.com",
@@ -95,28 +96,27 @@
     function calc() {
         const getV = (id) => Number(document.getElementById(id).value) || 0;
 
-        // 1. 판매 원가 (개당 1만 / 3억 / 5억 등)
+        // 1. 판매 원가 합계
         const c4_r = getV('c4') * 500000000;
-        const bm_raw = getV('bm') * 10000; // 원가는 만원
+        const bm_raw = getV('bm') * 10000; 
         const drug_r = (getV('flour') + getV('paper')) * 300000000;
         const gun_r = (getV('g1') * 300000000) + (getV('g2') * 150000000) + (getV('g3') * 200000000) + (getV('ammo') * 200000) + (getV('melee') * 100000000);
-        
         const total_raw = c4_r + bm_raw + drug_r + gun_r;
 
-        // 2. 비콘 환전가 (검은돈만 개당 9000원으로 계산, 나머지는 그대로)
+        // 2. 비콘 환전가 (검은돈만 9,000원으로 차감)
         const bm_beacon = getV('bm') * 9000;
         const total_beacon = c4_r + bm_beacon + drug_r + gun_r;
 
         // 3. 조직 수수료 (비콘 환전가의 30%)
         const org_fee = total_beacon * 0.3;
 
-        // 4. 최종 지급액 (비콘 환전가 - 수수료)
+        // 4. 실제 지급액 (환전가 - 수수료)
         const final_pay = total_beacon - org_fee;
 
-        // 5. 공동계좌 입금액 (수수료 수익의 30%)
+        // 5. 공계 입금액 (수수료 수익의 30%)
         const total_b = org_fee * 0.3;
 
-        // 화면 출력
+        // 데이터 화면에 찍기
         document.getElementById('total_r').innerText = formatWon(total_raw);
         document.getElementById('beacon_p').innerText = formatWon(total_beacon);
         document.getElementById('org_fee').innerText = formatWon(org_fee);
@@ -128,7 +128,7 @@
         const seller = document.getElementById('log_seller').value;
         const buyer = document.getElementById('log_buyer').value;
         const link = document.getElementById('log_link').value;
-        const amount = document.getElementById('final_pay').innerText; // 실제 지급액 기준 기록
+        const amount = document.getElementById('final_pay').innerText; 
         const bank_deposit = document.getElementById('total_b').innerText;
 
         if(!seller || !buyer || !link || amount === "0원") {
@@ -149,6 +149,7 @@
         });
     }
 
+    // 로그 실시간 불러오기
     database.ref('logs').on('value', (snapshot) => {
         const logBox = document.getElementById('admin_logs');
         logBox.innerHTML = "";
@@ -173,4 +174,3 @@
 </script>
 </body>
 </html>
-

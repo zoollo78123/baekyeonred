@@ -30,6 +30,10 @@
         .bm-row { display: flex; justify-content: space-between; font-size: 12px; color: #636e72; margin-bottom: 4px; }
         
         #admin_logs { margin-top: 20px; background: #000; padding: 15px; border-radius: 10px; border: 1px solid #333; font-size: 13px; max-height: 400px; overflow-y: auto; }
+        
+        /* 삭제 버튼 스타일 */
+        .btn-delete { background: #ff7675; color: white; border: none; padding: 2px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; float: right; }
+        .btn-delete:hover { background: #d63031; }
     </style>
 </head>
 <body>
@@ -45,8 +49,8 @@
 
     <div class="section">
         <div class="section-title">마약 및 위폐</div>
-        <div class="row"><label>밀가루 [개당 300만 / 100개 3억]</label><input type="number" id="flour" oninput="calc()"></div>
-        <div class="row"><label>색종이 [개당 300만 / 100개 3억]</label><input type="number" id="paper" oninput="calc()"></div>
+        <div class="row"><label>밀가루 [개당 300만]</label><input type="number" id="flour" oninput="calc()"></div>
+        <div class="row"><label>색종이 [개당 300만]</label><input type="number" id="paper" oninput="calc()"></div>
     </div>
 
     <div class="section">
@@ -54,7 +58,7 @@
         <div class="row"><label>카빈소총 [3억]</label><input type="number" id="g1" oninput="calc()"></div>
         <div class="row"><label>어썰트 / 컴뱃 [1.5억]</label><input type="number" id="g2" oninput="calc()"></div>
         <div class="row"><label>SMG 종류 [2억]</label><input type="number" id="g3" oninput="calc()"></div>
-        <div class="row"><label>탄약 [개당 20만 / 100발 2000만]</label><input type="number" id="ammo" oninput="calc()"></div>
+        <div class="row"><label>탄약 [발당 20만]</label><input type="number" id="ammo" oninput="calc()"></div>
         <div class="row"><label>근접무기 [1억]</label><input type="number" id="melee" oninput="calc()"></div>
     </div>
 
@@ -113,42 +117,27 @@
 
     function calc() {
         const getV = (id) => Number(document.getElementById(id).value) || 0;
-
-        // 1. 각 품목별 판매 총액 계산 (1개 입력 시 개당 가격으로 계산됨)
         const c4_total = getV('c4') * 500000000;
-        const flour_total = getV('flour') * 3000000; // 100개에 3억이므로 1개에 300만
-        const paper_total = getV('paper') * 3000000; // 100개에 3억이므로 1개에 300만
+        const flour_total = getV('flour') * 3000000;
+        const paper_total = getV('paper') * 3000000;
         const g1_total = getV('g1') * 300000000;
         const g2_total = getV('g2') * 150000000;
         const g3_total = getV('g3') * 200000000;
-        const ammo_total = getV('ammo') * 200000;    // 100발에 2000만이므로 1발에 20만
+        const ammo_total = getV('ammo') * 200000;
         const melee_total = getV('melee') * 100000000;
 
-        // 일반 품목 전체 합계
         const general_sales_total = c4_total + flour_total + paper_total + g1_total + g2_total + g3_total + ammo_total + melee_total;
 
-        // 2. 검은돈 계산 (유지)
         const bm_raw = getV('bm') * 10000;
         const bm_server_fee = bm_raw * 0.1;
         const bm_org_fee = bm_raw * 0.2;
         const bm_citizen_pay = bm_raw * 0.7;
 
-        // 3. 최종 결과 산출
-        // 시민 지급 총액 = 일반 품목 합계 + 검은돈 지급액(70%)
         const final_pay = general_sales_total + bm_citizen_pay;
-
-        // 공동계좌 입금액 = (일반 품목 판매가의 30%) + (검은돈 조직수수료 20% 전액)
-        // 검은돈 조직수수료는 조직의 수익이므로 그 수익을 공계에 넣는 것인지, 
-        // 아니면 검은돈도 전체의 30%를 넣는 것인지에 따라 다르지만 
-        // 문맥상 조직 수익인 "조직 수수료 20%"를 공계로 취급하거나 
-        // 일반품목처럼 "판매가(1만)의 30%"를 넣는 것으로 해석됩니다.
-        // 여기서는 일반 품목은 판매가의 30%, 검은돈은 조직수수료(20%)를 합산하도록 설정했습니다.
         const total_bank = (general_sales_total * 0.3) + bm_org_fee;
 
-        // 화면 업데이트
         document.getElementById('final_pay').innerText = formatWon(final_pay);
         document.getElementById('total_b').innerText = formatWon(total_bank);
-        
         document.getElementById('bm_server_fee').innerText = formatWon(bm_server_fee);
         document.getElementById('bm_org_fee').innerText = formatWon(bm_org_fee);
         document.getElementById('bm_citizen_pay').innerText = formatWon(bm_citizen_pay);
@@ -161,8 +150,8 @@
         const amount = document.getElementById('final_pay').innerText;
         const bank_deposit = document.getElementById('total_b').innerText;
 
-        if(!seller || !buyer || !link || (getV('c4') + getV('bm') + getV('flour') + getV('g1')) === 0) {
-            alert("판매 내역을 입력해주세요!"); return;
+        if(!seller || !buyer || !link || amount === "0원") {
+            alert("내용을 입력해주세요!"); return;
         }
 
         database.ref('logs').push({
@@ -179,20 +168,33 @@
         });
     }
 
+    // 데이터 삭제 함수
+    function deleteLog(key) {
+        if(confirm("이 기록을 삭제할까요?")) {
+            database.ref('logs').child(key).remove()
+            .then(() => alert("삭제되었습니다."));
+        }
+    }
+
+    // 실시간 리스너 (파이어베이스에서 지우면 여기서도 즉시 지워짐)
     database.ref('logs').on('value', (snapshot) => {
         const logBox = document.getElementById('admin_logs');
         logBox.innerHTML = "";
         const data = snapshot.val();
-        if(!data) return;
+        if(!data) { logBox.innerHTML = "기록이 없습니다."; return; }
+        
         Object.keys(data).reverse().forEach(key => {
             const item = data[key];
             const div = document.createElement('div');
             div.style.borderBottom = "1px solid #222";
             div.style.padding = "10px 0";
+            div.style.position = "relative";
             div.innerHTML = `
+                <button class="btn-delete" onclick="deleteLog('${key}')">삭제</button>
                 <div style="color:#00d4ff; font-size:11px;">[${item.date}]</div>
                 <div><b>${item.seller}</b> ➔ <b>${item.buyer}</b></div>
                 <div style="color:#ff7675;">지급: ${item.amount} / 공계: ${item.bank_deposit}</div>
+                <a href="${item.link}" target="_blank" style="color:#888; font-size:10px; text-decoration:none;">[로그 링크]</a>
             `;
             logBox.appendChild(div);
         });
@@ -202,3 +204,4 @@
 </script>
 </body>
 </html>
+

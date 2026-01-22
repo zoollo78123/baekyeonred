@@ -18,9 +18,19 @@
         input:focus { border-color: #00d4ff; }
         .log-input { width: 100%; text-align: left; margin-bottom: 10px; box-sizing: border-box; }
         .btn-submit { width: 100%; padding: 15px; background: #00d4ff; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        
+        /* 결과창 디자인 */
         .result-container { background: #fff; color: #000; padding: 20px; border-radius: 10px; margin-top: 20px; }
-        .total-val { font-size: 20px; font-weight: 900; color: #d63031; }
-        .sub-val { font-size: 14px; font-weight: bold; color: #555; }
+        .total-box { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px double #eee; }
+        .total-label { font-size: 14px; font-weight: bold; color: #2d3436; }
+        .total-val { font-size: 24px; font-weight: 900; color: #d63031; display: block; }
+        .bank-val { font-size: 20px; font-weight: 800; color: #0984e3; }
+
+        /* 검은돈 상세 섹션 */
+        .bm-detail-box { background: #f8f9fa; border: 1px solid #dfe6e9; border-radius: 8px; padding: 12px; margin-top: 10px; }
+        .bm-detail-title { font-size: 13px; font-weight: bold; color: #2d3436; margin-bottom: 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+        .bm-row { display: flex; justify-content: space-between; font-size: 12px; color: #636e72; margin-bottom: 4px; }
+        
         #admin_logs { margin-top: 20px; background: #000; padding: 15px; border-radius: 10px; border: 1px solid #333; font-size: 13px; max-height: 400px; overflow-y: auto; }
     </style>
 </head>
@@ -32,7 +42,7 @@
     <div class="section">
         <div class="section-title">기본 품목</div>
         <div class="row"><label>C4 수량 [개당 5억]</label><input type="number" id="c4" oninput="calc()"></div>
-        <div class="row"><label>검은돈 수량 [개당 1만 / 비콘 9천]</label><input type="number" id="bm" oninput="calc()"></div>
+        <div class="row"><label>검은돈 수량 [개당 1만]</label><input type="number" id="bm" oninput="calc()"></div>
     </div>
 
     <div class="section">
@@ -51,12 +61,24 @@
     </div>
 
     <div class="result-container">
-        <div class="row"><label>판매 원가 합계 (100%)</label><span id="total_r" class="sub-val">0원</span></div>
-        <div class="row"><label>비콘 환전가 (검은돈 90%)</label><span id="beacon_p" class="sub-val">0원</span></div>
-        <div class="row"><label>조직 수수료 (총 30% 수익)</label><span id="org_fee" style="font-weight:bold; color:#e17055;">0원</span></div>
-        <hr style="border: 0.5px solid #eee; margin: 10px 0;">
-        <div class="row"><label>실제 지급액 (환전가-수수료)</label><span id="final_pay" class="total-val" style="color:#000;">0원</span></div>
-        <div class="row" style="margin-top:5px;"><label>공동계좌 입금액 (수익의 30%)</label><span id="total_b" style="font-weight:bold; color:#0984e3; font-size: 18px;">0원</span></div>
+        <div class="total-box">
+            <span class="total-label">💰 시민에게 총 지급할 금액</span>
+            <span id="final_pay" class="total-val">0원</span>
+        </div>
+        
+        <div class="total-box" style="border:none; margin:0;">
+            <span class="total-label">🏦 공동계좌 입금액 (수익의 30%)</span>
+            <span id="total_b" class="bank-val">0원</span>
+        </div>
+
+        <div class="bm-detail-box">
+            <div class="bm-detail-title">[검은돈 확인 목록]</div>
+            <div class="bm-row"><span>서버 수수료 (10%)</span><span id="bm_server_fee">0원</span></div>
+            <div class="bm-row"><span>조직 수수료 (20%)</span><span id="bm_org_fee">0원</span></div>
+            <div class="bm-row" style="font-weight:bold; color:#d63031; margin-top:5px; border-top:1px dashed #ccc; padding-top:4px;">
+                <span>시민 지급액 (70%)</span><span id="bm_citizen_pay">0원</span>
+            </div>
+        </div>
     </div>
 
     <div class="section" style="margin-top:20px;">
@@ -67,12 +89,10 @@
         <button class="btn-submit" onclick="submitLog()">기록 전송하기</button>
     </div>
 
-    <div class="section-title" style="margin-top:30px;">📊 실시간 장부 현황</div>
-    <div id="admin_logs">기록을 불러오는 중...</div>
+    <div id="admin_logs">데이터를 불러오는 중...</div>
 </div>
 
 <script>
-    // Firebase 설정
     const firebaseConfig = {
         apiKey: "AIzaSyB8j4S7s63O_sunf2lugiNH9cjHCQYYTCo",
         authDomain: "backyeonred.firebaseapp.com",
@@ -96,43 +116,48 @@
     function calc() {
         const getV = (id) => Number(document.getElementById(id).value) || 0;
 
-        // 1. 판매 원가 합계
-        const c4_r = getV('c4') * 500000000;
-        const bm_raw = getV('bm') * 10000; 
-        const drug_r = (getV('flour') + getV('paper')) * 300000000;
-        const gun_r = (getV('g1') * 300000000) + (getV('g2') * 150000000) + (getV('g3') * 200000000) + (getV('ammo') * 200000) + (getV('melee') * 100000000);
-        const total_raw = c4_r + bm_raw + drug_r + gun_r;
+        // 1. 일반 품목 합계
+        const general_total = (getV('c4') * 500000000) +
+                              ((getV('flour') + getV('paper')) * 300000000) +
+                              (getV('g1') * 300000000) + (getV('g2') * 150000000) + 
+                              (getV('g3') * 200000000) + (getV('ammo') * 200000) + 
+                              (getV('melee') * 100000000);
 
-        // 2. 비콘 환전가 (검은돈만 9,000원으로 차감)
-        const bm_beacon = getV('bm') * 9000;
-        const total_beacon = c4_r + bm_beacon + drug_r + gun_r;
+        // 2. 검은돈 계산 (개당 1만원 기준)
+        const bm_raw = getV('bm') * 10000;
+        const bm_server_fee = bm_raw * 0.1; // 서버 수수료 10% (1000원 차감)
+        const bm_org_fee = bm_raw * 0.2;    // 조직 수수료 20% (2000원 차감)
+        const bm_citizen_pay = bm_raw * 0.7; // 시민 지급액 70% (7000원 지급)
 
-        // 3. 조직 수수료 (비콘 환전가의 30%)
-        const org_fee = total_beacon * 0.3;
+        // 3. 최종 결과 산출
+        // 시민에게 줄 총액 = 일반 품목 총액 + 검은돈 지급액(70%)
+        const final_pay = general_total + bm_citizen_pay;
 
-        // 4. 실제 지급액 (환전가 - 수수료)
-        const final_pay = total_beacon - org_fee;
+        // 공동계좌 입금액 (수익의 30%)
+        // 수익 = (일반품목의 30%라고 가정) + (검은돈 조직수수료 20% 부분)
+        // 이 수익금 합계의 30%를 공계에 입금
+        const total_profit = (general_total * 0.3) + bm_org_fee;
+        const total_bank = total_profit * 0.3;
 
-        // 5. 공계 입금액 (수수료 수익의 30%)
-        const total_b = org_fee * 0.3;
-
-        // 데이터 화면에 찍기
-        document.getElementById('total_r').innerText = formatWon(total_raw);
-        document.getElementById('beacon_p').innerText = formatWon(total_beacon);
-        document.getElementById('org_fee').innerText = formatWon(org_fee);
+        // 화면 업데이트
         document.getElementById('final_pay').innerText = formatWon(final_pay);
-        document.getElementById('total_b').innerText = formatWon(total_b);
+        document.getElementById('total_b').innerText = formatWon(total_bank);
+        
+        // 검은돈 상세 업데이트
+        document.getElementById('bm_server_fee').innerText = formatWon(bm_server_fee);
+        document.getElementById('bm_org_fee').innerText = formatWon(bm_org_fee);
+        document.getElementById('bm_citizen_pay').innerText = formatWon(bm_citizen_pay);
     }
 
     function submitLog() {
         const seller = document.getElementById('log_seller').value;
         const buyer = document.getElementById('log_buyer').value;
         const link = document.getElementById('log_link').value;
-        const amount = document.getElementById('final_pay').innerText; 
+        const amount = document.getElementById('final_pay').innerText;
         const bank_deposit = document.getElementById('total_b').innerText;
 
-        if(!seller || !buyer || !link || amount === "0원") {
-            alert("모든 정보를 입력하고 금액을 확인해주세요!"); return;
+        if(!seller || !buyer || !link || (getV('c4') + getV('bm') + getV('flour')) === 0) {
+            alert("입력된 판매 정보가 없습니다!"); return;
         }
 
         database.ref('logs').push({
@@ -143,19 +168,17 @@
             bank_deposit: bank_deposit,
             link: link
         }).then(() => {
-            alert("장부 기록 성공! ❄️");
+            alert("장부에 기록되었습니다! ❄️");
             document.getElementById('log_buyer').value = "";
             document.getElementById('log_link').value = "";
         });
     }
 
-    // 로그 실시간 불러오기
     database.ref('logs').on('value', (snapshot) => {
         const logBox = document.getElementById('admin_logs');
         logBox.innerHTML = "";
         const data = snapshot.val();
-        if(!data) { logBox.innerHTML = "기록이 없습니다."; return; }
-        
+        if(!data) return;
         Object.keys(data).reverse().forEach(key => {
             const item = data[key];
             const div = document.createElement('div');
@@ -164,13 +187,13 @@
             div.innerHTML = `
                 <div style="color:#00d4ff; font-size:11px;">[${item.date}]</div>
                 <div><b>${item.seller}</b> ➔ <b>${item.buyer}</b></div>
-                <div style="color:#ff7675; font-weight:bold;">지급 금액: ${item.amount}</div>
-                <div style="color:#0984e3; font-weight:bold;">공계 입금: ${item.bank_deposit || '기록 없음'}</div>
-                <a href="${item.link}" target="_blank" style="color:#888; font-size:11px;">[로그 링크 확인]</a>
+                <div style="color:#ff7675;">지급: ${item.amount} / 공계: ${item.bank_deposit}</div>
             `;
             logBox.appendChild(div);
         });
     });
+
+    function getV(id) { return Number(document.getElementById(id).value) || 0; }
 </script>
 </body>
 </html>

@@ -30,7 +30,7 @@
 
     <div class="section">
         <div class="section-title">기본 품목</div>
-        <div class="row"><label>C4 수량 [5개↑ / 개당 5억]</label><input type="number" id="c4" oninput="calc()"></div>
+        <div class="row"><label>C4 수량 [개당 5억]</label><input type="number" id="c4" oninput="calc()"></div>
         <div class="row"><label>검은돈 수량 [개당 1만]</label><input type="number" id="bm" oninput="calc()"></div>
     </div>
 
@@ -50,8 +50,8 @@
     </div>
 
     <div class="result-container">
-        <div class="row" style="color:#000;"><label>총 받을 금액</label><span id="total_r" class="total-val">0원</span></div>
-        <div class="row" style="color:#000;"><label>총 공계 입금액</label><span id="total_b" style="font-weight:bold; color:#0984e3;">0원</span></div>
+        <div class="row" style="color:#000;"><label>총 받을 금액 (판매가 100%)</label><span id="total_r" class="total-val">0원</span></div>
+        <div class="row" style="color:#000;"><label>공계 입금액 (판매가 30%의 30%)</label><span id="total_b" style="font-weight:bold; color:#0984e3;">0원</span></div>
     </div>
 
     <div class="section" style="margin-top:20px;">
@@ -90,21 +90,22 @@
     function calc() {
         const getV = (id) => Number(document.getElementById(id).value) || 0;
 
-        const c4_r = getV('c4') >= 5 ? getV('c4') * 500000000 : 0;
-        const bm_r = (getV('bm') * 9000) * 0.8;
-        const item_r = (getV('flour') + getV('paper')) * 300000000 * 0.7;
-        const gun_r = (getV('g1') * 300000000) + (getV('g2') * 150000000) + (getV('g3') * 200000000) + (getV('ammo') * 200000) + (getV('melee') * 100000000);
-        
-        const total_r = c4_r + bm_r + item_r + gun_r;
+        // 1. 전체 판매 총액 계산
+        const c4_total = getV('c4') * 500000000;
+        const bm_total = getV('bm') * 10000;
+        const drug_total = (getV('flour') + getV('paper')) * 300000000;
+        const gun_total = (getV('g1') * 300000000) + 
+                          (getV('g2') * 150000000) + 
+                          (getV('g3') * 200000000) + 
+                          (getV('ammo') * 200000) + 
+                          (getV('melee') * 100000000);
 
-        const c4_b = (getV('c4') * 500000000) * 0.3;
-        const bm_b = ((getV('bm') * 9000) * 0.2) * 0.3;
-        const item_b = ((getV('flour') + getV('paper')) * 300000000 * 0.9 * 0.2) * 0.3;
-        const gun_b = gun_r * 0.3;
+        const total_sales = c4_total + bm_total + drug_total + gun_total;
 
-        const total_b = c4_b + bm_b + item_b + gun_b;
+        // 2. 공계 입금액 계산: (전체 판매금의 30%) 중에서 다시 30%
+        const total_b = (total_sales * 0.3) * 0.3;
 
-        document.getElementById('total_r').innerText = formatWon(total_r);
+        document.getElementById('total_r').innerText = formatWon(total_sales);
         document.getElementById('total_b').innerText = formatWon(total_b);
     }
 

@@ -60,7 +60,7 @@
 
     <div class="result-container">
         <div class="total-box">
-            <span class="total-label">💰 시민에게 총 지급할 금액</span>
+            <span class="total-label">💰 시민에게 받을 금액</span>
             <span id="final_pay" class="total-val">0원</span>
         </div>
         
@@ -129,6 +129,7 @@
         const bm_org_fee = bm_raw * 0.2;
         const bm_citizen_pay = bm_raw * 0.7;
 
+        // 최종 합산 로직 유지
         const final_pay = general_sales_total + bm_citizen_pay;
         const total_bank = (general_sales_total * 0.3) + bm_org_fee;
 
@@ -164,7 +165,6 @@
         });
     }
 
-    // 실시간 리스너: 파이어베이스 콘솔에서 데이터를 삭제하면 사이트에서도 실시간으로 삭제됨
     database.ref('logs').on('value', (snapshot) => {
         const logBox = document.getElementById('admin_logs');
         logBox.innerHTML = "";
@@ -179,7 +179,7 @@
             div.innerHTML = `
                 <div style="color:#00d4ff; font-size:11px;">[${item.date}]</div>
                 <div><b>${item.seller}</b> ➔ <b>${item.buyer}</b></div>
-                <div style="color:#ff7675;">지급: ${item.amount} / 공계: ${item.bank_deposit}</div>
+                <div style="color:#ff7675;">받을금액: ${item.amount} / 공계: ${item.bank_deposit}</div>
                 <a href="${item.link}" target="_blank" style="color:#888; font-size:10px; text-decoration:none;">[로그 링크 확인]</a>
             `;
             logBox.appendChild(div);
@@ -190,4 +190,3 @@
 </script>
 </body>
 </html>
-

@@ -19,14 +19,12 @@
         .log-input { width: 100%; text-align: left; margin-bottom: 10px; box-sizing: border-box; }
         .btn-submit { width: 100%; padding: 15px; background: #00d4ff; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
         
-        /* 결과창 디자인 */
         .result-container { background: #fff; color: #000; padding: 20px; border-radius: 10px; margin-top: 20px; }
         .total-box { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px double #eee; }
         .total-label { font-size: 14px; font-weight: bold; color: #2d3436; }
         .total-val { font-size: 24px; font-weight: 900; color: #d63031; display: block; }
         .bank-val { font-size: 20px; font-weight: 800; color: #0984e3; }
 
-        /* 검은돈 상세 섹션 */
         .bm-detail-box { background: #f8f9fa; border: 1px solid #dfe6e9; border-radius: 8px; padding: 12px; margin-top: 10px; }
         .bm-detail-title { font-size: 13px; font-weight: bold; color: #2d3436; margin-bottom: 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
         .bm-row { display: flex; justify-content: space-between; font-size: 12px; color: #636e72; margin-bottom: 4px; }
@@ -47,8 +45,8 @@
 
     <div class="section">
         <div class="section-title">마약 및 위폐</div>
-        <div class="row"><label>밀가루 [세트 / 3억]</label><input type="number" id="flour" oninput="calc()"></div>
-        <div class="row"><label>색종이 [세트 / 3억]</label><input type="number" id="paper" oninput="calc()"></div>
+        <div class="row"><label>밀가루 [개당 300만 / 100개 3억]</label><input type="number" id="flour" oninput="calc()"></div>
+        <div class="row"><label>색종이 [개당 300만 / 100개 3억]</label><input type="number" id="paper" oninput="calc()"></div>
     </div>
 
     <div class="section">
@@ -56,7 +54,7 @@
         <div class="row"><label>카빈소총 [3억]</label><input type="number" id="g1" oninput="calc()"></div>
         <div class="row"><label>어썰트 / 컴뱃 [1.5억]</label><input type="number" id="g2" oninput="calc()"></div>
         <div class="row"><label>SMG 종류 [2억]</label><input type="number" id="g3" oninput="calc()"></div>
-        <div class="row"><label>탄약 [100발당 2000만원]</label><input type="number" id="ammo" oninput="calc()"></div>
+        <div class="row"><label>탄약 [개당 20만 / 100발 2000만]</label><input type="number" id="ammo" oninput="calc()"></div>
         <div class="row"><label>근접무기 [1억]</label><input type="number" id="melee" oninput="calc()"></div>
     </div>
 
@@ -67,7 +65,7 @@
         </div>
         
         <div class="total-box" style="border:none; margin:0;">
-            <span class="total-label">🏦 공동계좌 입금액 (수익의 30%)</span>
+            <span class="total-label">🏦 공동계좌 입금액 (판매가의 30%)</span>
             <span id="total_b" class="bank-val">0원</span>
         </div>
 
@@ -116,34 +114,41 @@
     function calc() {
         const getV = (id) => Number(document.getElementById(id).value) || 0;
 
-        // 1. 일반 품목 합계
-        const general_total = (getV('c4') * 500000000) +
-                              ((getV('flour') + getV('paper')) * 300000000) +
-                              (getV('g1') * 300000000) + (getV('g2') * 150000000) + 
-                              (getV('g3') * 200000000) + (getV('ammo') * 200000) + 
-                              (getV('melee') * 100000000);
+        // 1. 각 품목별 판매 총액 계산 (1개 입력 시 개당 가격으로 계산됨)
+        const c4_total = getV('c4') * 500000000;
+        const flour_total = getV('flour') * 3000000; // 100개에 3억이므로 1개에 300만
+        const paper_total = getV('paper') * 3000000; // 100개에 3억이므로 1개에 300만
+        const g1_total = getV('g1') * 300000000;
+        const g2_total = getV('g2') * 150000000;
+        const g3_total = getV('g3') * 200000000;
+        const ammo_total = getV('ammo') * 200000;    // 100발에 2000만이므로 1발에 20만
+        const melee_total = getV('melee') * 100000000;
 
-        // 2. 검은돈 계산 (개당 1만원 기준)
+        // 일반 품목 전체 합계
+        const general_sales_total = c4_total + flour_total + paper_total + g1_total + g2_total + g3_total + ammo_total + melee_total;
+
+        // 2. 검은돈 계산 (유지)
         const bm_raw = getV('bm') * 10000;
-        const bm_server_fee = bm_raw * 0.1; // 서버 수수료 10% (1000원 차감)
-        const bm_org_fee = bm_raw * 0.2;    // 조직 수수료 20% (2000원 차감)
-        const bm_citizen_pay = bm_raw * 0.7; // 시민 지급액 70% (7000원 지급)
+        const bm_server_fee = bm_raw * 0.1;
+        const bm_org_fee = bm_raw * 0.2;
+        const bm_citizen_pay = bm_raw * 0.7;
 
         // 3. 최종 결과 산출
-        // 시민에게 줄 총액 = 일반 품목 총액 + 검은돈 지급액(70%)
-        const final_pay = general_total + bm_citizen_pay;
+        // 시민 지급 총액 = 일반 품목 합계 + 검은돈 지급액(70%)
+        const final_pay = general_sales_total + bm_citizen_pay;
 
-        // 공동계좌 입금액 (수익의 30%)
-        // 수익 = (일반품목의 30%라고 가정) + (검은돈 조직수수료 20% 부분)
-        // 이 수익금 합계의 30%를 공계에 입금
-        const total_profit = (general_total * 0.3) + bm_org_fee;
-        const total_bank = total_profit * 0.3;
+        // 공동계좌 입금액 = (일반 품목 판매가의 30%) + (검은돈 조직수수료 20% 전액)
+        // 검은돈 조직수수료는 조직의 수익이므로 그 수익을 공계에 넣는 것인지, 
+        // 아니면 검은돈도 전체의 30%를 넣는 것인지에 따라 다르지만 
+        // 문맥상 조직 수익인 "조직 수수료 20%"를 공계로 취급하거나 
+        // 일반품목처럼 "판매가(1만)의 30%"를 넣는 것으로 해석됩니다.
+        // 여기서는 일반 품목은 판매가의 30%, 검은돈은 조직수수료(20%)를 합산하도록 설정했습니다.
+        const total_bank = (general_sales_total * 0.3) + bm_org_fee;
 
         // 화면 업데이트
         document.getElementById('final_pay').innerText = formatWon(final_pay);
         document.getElementById('total_b').innerText = formatWon(total_bank);
         
-        // 검은돈 상세 업데이트
         document.getElementById('bm_server_fee').innerText = formatWon(bm_server_fee);
         document.getElementById('bm_org_fee').innerText = formatWon(bm_org_fee);
         document.getElementById('bm_citizen_pay').innerText = formatWon(bm_citizen_pay);
@@ -156,8 +161,8 @@
         const amount = document.getElementById('final_pay').innerText;
         const bank_deposit = document.getElementById('total_b').innerText;
 
-        if(!seller || !buyer || !link || (getV('c4') + getV('bm') + getV('flour')) === 0) {
-            alert("입력된 판매 정보가 없습니다!"); return;
+        if(!seller || !buyer || !link || (getV('c4') + getV('bm') + getV('flour') + getV('g1')) === 0) {
+            alert("판매 내역을 입력해주세요!"); return;
         }
 
         database.ref('logs').push({
@@ -168,7 +173,7 @@
             bank_deposit: bank_deposit,
             link: link
         }).then(() => {
-            alert("장부에 기록되었습니다! ❄️");
+            alert("기록 완료! ❄️");
             document.getElementById('log_buyer').value = "";
             document.getElementById('log_link').value = "";
         });
